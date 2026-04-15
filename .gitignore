@@ -11,3 +11,4 @@ report/*.out
 report/*.synctex.gz
 report/*.toc
 report/*.log
+extra/
