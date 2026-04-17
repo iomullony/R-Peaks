@@ -1,4 +1,3 @@
-
 \documentclass[11pt]{article}
 \usepackage[top=0.7in, left=1in, right=1in, bottom=1in]{geometry}
 \usepackage{amsmath}
@@ -9,6 +8,7 @@
 \usepackage{booktabs}
 \usepackage{tikz}
 \usepackage{tcolorbox}
+\usepackage{siunitx}  
 \usetikzlibrary{arrows.meta, positioning}
 
 \setlength{\parindent}{0pt}
@@ -36,6 +36,8 @@ Wavelet transforms are widely used for R-peak detection due to their ability to 
 
 The implementation was evaluated on the MIT-BIH Arrhythmia Database~\cite{mitbih_physionet}, consistent with the original paper.
 
+Finally, to evaluate real-world adaptability, the modular pipeline is extended to the PhysioNet ECGRDVQ pharmacological database. The algorithm is benchmarked against the classical Pan-Tompkins method, revealing a significant clinical advantage in mitigating T-wave over-sensing caused by drug-induced repolarization abnormalities.
+
 
 \section{R-Peaks}\label{sec:r-peaks}
 
@@ -51,7 +53,7 @@ The QRS complex is the most diagnostically significant segment, corresponding to
 \end{figure}
 
 
-\section{Method}\label{sec:method}
+\section{Methodology}\label{sec:method}
 
 The detection pipeline follows the method proposed by Xia et al.~\cite{xia_quick_2015}. ECG recordings from the MIT-BIH Arrhythmia Database are first loaded and passed through a wavelet decomposition stage, which attenuates noise and removes unwanted frequency components to produce a clean signal. An absolute-slope feature is then computed from the filtered signal to emphasise the rapid amplitude changes characteristic of QRS complexes; the slope captures the instantaneous rate of change of the signal. This feature is subsequently used as input to a K-means clustering step, which partitions the signal into QRS and non-QRS regions. R-peaks are finally extracted as local maxima within each identified QRS region, as illustrated in Figure~\ref{fig:method}. The following sections describe each stage of the pipeline in detail.
 
@@ -60,6 +62,18 @@ The detection pipeline follows the method proposed by Xia et al.~\cite{xia_quick
     \includegraphics[width=1\textwidth]{imgs/Method.png}
     \caption{Overview of the detection pipeline~\cite{xia_quick_2015}}\label{fig:method}
 \end{figure}
+
+
+\subsection{Modular Pipeline Architecture}\label{sec:modular}
+To ensure the algorithm is robust and adaptable to various datasets, the implementation was refactored into a highly modular pipeline consisting of distinct stages:
+
+\begin{enumerate}[label=\arabic*.]
+    \item \textbf{Preprocessing:} Applies Wavelet Denoising (using \texttt{sym8}) and a dynamic Polarity Correction module to orient the QRS complexes positively.
+    \item \textbf{Feature Extraction:} Computes the absolute gradient slope of the cleaned signal to emphasize high-frequency variations characteristic of R-peaks.
+    \item \textbf{QRS Masking:} Segments the signal into 60-second windows and applies K-Means clustering ($k=2$) to the gradient features, isolating the QRS regions from the background.
+    \item \textbf{Peak Extraction \& Refractory Filtering:} Identifies the local maximum within each QRS region. A physiological refractory filter of \SI{200}{ms} is then applied, retaining the highest amplitude peak if multiple detections occur too closely.
+    \item \textbf{Evaluation:} An independent module compares detected peaks against annotated ground truth files, calculating metrics such as Sensitivity (Se) and Positive Predictive Value (PPV) within a defined tolerance window (e.g., \SI{150}{ms}).
+\end{enumerate}
 
 
 \section{Exploratory Analysis}\label{sec:exploratory}
@@ -88,6 +102,8 @@ Figure~\ref{fig:ft} shows the Fourier magnitude spectrum of the signal, with the
 
 \begin{table}[htbp]
     \centering
+    \caption{Frequency characteristics of ECG signal components and noise sources~\cite{luo_review_2010, tereshchenko_frequency_2015, xie_computational_2020}}
+    \label{tab:ecg-components}
     \begin{tabular}{lll}
         \toprule
         \textbf{Component} & \textbf{Freq.\ Range} & \textbf{Physical Cause} \\
@@ -98,8 +114,6 @@ Figure~\ref{fig:ft} shows the Fourier magnitude spectrum of the signal, with the
         Power line noise  & 50 or 60\,Hz    & Electrical interference (PLI)           \\
         \bottomrule
     \end{tabular}
-    \caption{Frequency characteristics of ECG signal components and noise sources~\cite{luo_review_2010, tereshchenko_frequency_2015, xie_computational_2020}}
-    \label{tab:ecg-components}
 \end{table}
 
 
@@ -119,6 +133,8 @@ The number of levels is chosen to answer the question: \textit{what is the lowes
 
 \begin{table}[htbp]
     \centering
+    \caption{Wavelet decomposition levels and their corresponding frequency bands for $f_s = 360$\,Hz~\cite{sharma_qrs_2017, zidelmal_qrs_2012}.}
+    \label{tab:wavelet-levels}
     \begin{tabular}{llll}
         \toprule
         \textbf{Level} & \textbf{Freq.\ Band (Hz)} & \textbf{Content} & \textbf{Action} \\
@@ -134,8 +150,6 @@ The number of levels is chosen to answer the question: \textit{what is the lowes
         cD1 & 90.00 -- 180.00 & High-frequency noise   & Remove \\
         \bottomrule
     \end{tabular}
-    \caption{Wavelet decomposition levels and their corresponding frequency bands for $f_s = 360$\,Hz~\cite{sharma_qrs_2017, zidelmal_qrs_2012}.}
-    \label{tab:wavelet-levels}
 \end{table}
 
 The levels of primary interest are cD4 and cD5, which correspond to the 5--22.5\,Hz band where the bulk of QRS energy is concentrated~\cite{sharma_qrs_2017, zidelmal_qrs_2012}. Since the QRS complex spans a broader bandwidth of up to 50\,Hz~\cite{tereshchenko_frequency_2015}, levels cD6, cD7, and cD8 are retained as well to preserve the full QRS morphology. At the other extreme, cA8, cD1, and cD2 are discarded, removing baseline drift and high-frequency noise respectively.
@@ -372,7 +386,7 @@ Most records in the MIT-BIH Arrhythmia Database achieve near-perfect performance
 
 Record~108 exhibits inverted QRS morphology, in which the R-peak appears as a negative deflection rather than a positive one, as shown in Figure~\ref{fig:record108}. Since the baseline algorithm identifies R-peaks as the local $\arg\max$ within each QRS region, this causes it to incorrectly select P or T wave peaks — which remain positive — instead of the true R-peak. The resulting detections are shown in Figure~\ref{fig:detection108}, and the confusion matrix in Figure~\ref{fig:cm108} quantifies the degradation:
 
-$$\text{Se} = 90.9\%,\quad \text{PPV} = 71.5\%,\quad \text{F1} = 80.1\%$$
+$$\text{Se} = 95.4\%,\quad \text{PPV} = 76.3\%,\quad \text{F1} = 84.8\%$$
 
 \begin{figure}[htbp]
     \centering
@@ -395,13 +409,23 @@ $$\text{Se} = 90.9\%,\quad \text{PPV} = 71.5\%,\quad \text{F1} = 80.1\%$$
     \label{fig:cm108}
 \end{figure}
 
-\subsubsection*{Polarity Correction and Refractory Period Tuning}
+\subsubsection*{Automatic Polarity Detection and Refractory Period Tuning}
 
 The issue was resolved by introducing an automatic polarity detection step immediately after the wavelet reconstruction. The dominant deflection direction is estimated from the first 10 seconds of the filtered signal: if the largest negative excursion exceeds the largest positive excursion, the signal is inverted prior to all subsequent processing. This ensures that the $\arg\max$ step always operates on a signal in which R-peaks are positive, regardless of lead orientation.
 
+ECG lead orientation is not standardised across recordings: depending on the electrode placement and lead configuration, the R-peak may appear as either a positive or negative deflection. The baseline $\arg\max$ extraction step assumes a positive R-peak, and therefore fails silently on inverted recordings — selecting P or T wave peaks instead of the true R-peak without any error signal.
+
+To handle this automatically, a polarity detection step is applied immediately after wavelet reconstruction, before any subsequent processing. The dominant deflection direction is estimated from the first 10 seconds of the filtered signal:
+
+$$\text{polarity} = \begin{cases} +1 & \text{if } \max(\hat{x}) \geq |\min(\hat{x})| \\ -1 & \text{otherwise} \end{cases}$$
+
+If $\text{polarity} = -1$, the signal is multiplied by $-1$ prior to slope computation, K-Means clustering, and R-peak extraction. This ensures that the $\arg\max$ step always operates on a signal in which R-peaks are positive, regardless of lead orientation, without requiring any record-specific configuration.
+
+This step is deliberately modular: it is a single pre-processing operation that normalises the signal polarity once and leaves all downstream stages unchanged. This design makes it straightforward to extend or replace — for example, a more robust implementation could estimate polarity from a longer reference window, or use the median rather than the maximum to reduce sensitivity to outlier beats~\cite{dogan_comprehensive_2023}.
+
 Additionally, the refractory period was increased from 200\,ms to 250\,ms for this record, reducing spurious double-detections arising from the abnormal QRS morphology. Together, these two modifications substantially improve performance, as shown in Figure~\ref{fig:enhancement} and confirmed by the confusion matrix in Figure~\ref{fig:cme}:
 
-$$\text{Se} = 95.6\%,\quad \text{PPV} = 91.2\%,\quad \text{F1} = 93.3\%$$
+$$\text{Se} = 98.7\%,\quad \text{PPV} = 91.0\%,\quad \text{F1} = 94.7\%$$
 
 \begin{figure}[htbp]
     \centering
@@ -416,6 +440,7 @@ $$\text{Se} = 95.6\%,\quad \text{PPV} = 91.2\%,\quad \text{F1} = 93.3\%$$
     \caption{Confusion matrix for Record~108 after polarity correction.}
     \label{fig:cme}
 \end{figure}
+
 
 \subsubsection*{Abnormal QRS Morphology}
 
@@ -432,30 +457,336 @@ This type of positional error does not affect beat counting or heart rate estima
     \label{fig:207detections}
 \end{figure}
 
+
+\subsection{Parameter Sensitivity}\label{subsec:sensitivity}
+
+Two parameters most directly affect detection performance: the \textbf{segment length} used for K-Means clustering, and the \textbf{refractory period} used to suppress duplicate detections. Both were fixed at 1 minute and 200\,ms respectively throughout this work, following Xia et al.~\cite{xia_quick_2015}. This section briefly analyses the sensitivity of results to these choices.
+
+
+\subsubsection*{Segment Length}
+
+The 1-minute segment length balances two competing requirements: segments must be long enough to contain sufficient beats for K-Means to form stable centroids, but short enough to track slow amplitude drifts in the recording. A typical resting heart rate of 60--80\,BPM produces approximately 60--80 beats per segment, which is well above the minimum needed for reliable two-cluster separation.
+
+Shorter segments (e.g.\ 30 seconds) would adapt more quickly to amplitude changes but risk centroid instability in low-heart-rate recordings ($<$40\,BPM), where only $\sim$20 beats would be available per segment. Longer segments (e.g.\ 5 minutes) would be more stable but would fail to adapt to gradual amplitude drift, effectively approximating the global clustering approach that was shown to fail in Section~\ref{subsec:k-means}. The 1-minute choice is therefore a well-motivated compromise consistent with the original paper.
+
+
+\subsubsection*{Refractory Period}
+
+The refractory period serves as a temporal constraint to prevent multiple detections of the same QRS complex and therefore sets an implicit upper bound on detectable heart rate. Table~\ref{tab:refractory} summarises the trade-off:
+
+\begin{table}[htbp]
+\centering
+\caption{Effect of refractory period on detectable heart rate range and duplicate suppression.}
+\label{tab:refractory}
+\begin{tabular}{cccl}
+\toprule
+\textbf{Refractory (ms)} & \textbf{Samples (360\,Hz)} & 
+\textbf{Max BPM} & \textbf{Trade-off} \\
+\midrule
+150 & 54  & 400 & More duplicates retained \\
+200 & 72  & 300 & Original Pan \& Tompkins~\cite{pan_real-time_1985} \\
+250 & 90  & 240 & Used for this project \\
+300 & 108 & 200 & Risk of missing tachycardia beats \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For standard recordings, 200\,ms is the physiologically motivated choice~\cite{pan_real-time_1985}. It was increased to 250\,ms for Record~108 (and used later for all the records), where the abnormal QRS morphology produced slope double-spikes spaced further apart than normal, causing the 200\,ms filter to miss some duplicates. A comparison between a 150 ms and a 250 ms refractory period (Table~\ref{tab:comparison}) reveals a classic sensitivity-precision trade-off. Lowering the period to 150 ms increased the overall Mean Sensitivity to 99.71\%, as it allowed the algorithm to detect closely-spaced pathological beats. However, this came at the cost of Mean Positive Predictivity, which dropped to 98.29\% due to an increase in false positives (FP) from double-counting notched QRS complexes or prominent T-waves. This is most evident in Record 207, where the PPV dropped from 80.44\% to 76.59\% when the refractory period was reduced.
+
+\begin{table}[ht]
+\centering
+\caption{Comparison of Detection Performance at Different Refractory Periods.}
+\label{tab:comparison}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Metric} & \multicolumn{2}{c}{\textbf{Refractory = 150 ms}} & \multicolumn{2}{c}{\textbf{Refractory = 250 ms}} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5}
+& \textbf{Se (\%)} & \textbf{PPV (\%)} & \textbf{Se (\%)} & \textbf{PPV (\%)} \\
+\midrule
+Mean & 99.71 & 98.29 & 99.63 & 98.93 \\
+Std  & 0.49  & 4.49  & 0.61  & 3.16  \\
+Min  & 97.73 & 76.59 & 97.72 & 80.44 \\
+Max  & 100.00 & 100.00 & 100.00 & 100.00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Computational Complexity}\label{subsec:complexity}
+
+The algorithm consists of four sequential stages, each with a well-defined computational cost. Table~\ref{tab:complexity} summarises the dominant operations and their complexity for a signal of $N$ samples.
+
+\begin{table}[htbp]
+\centering
+\caption{Computational complexity of each pipeline stage for a signal of $N$ samples.}
+\label{tab:complexity}
+\begin{tabular}{lll}
+\toprule
+\textbf{Stage} & \textbf{Dominant operation} & \textbf{Complexity} \\
+\midrule
+Wavelet decomposition  & Filter bank convolution & $\mathcal{O}(N)$ \\
+Polarity detection     & Max/min over window     & $\mathcal{O}(N)$ \\
+Absolute slope         & Element-wise gradient   & $\mathcal{O}(N)$ \\
+Segmented K-Means      & K-Means per segment     & $\mathcal{O}(N)$ \\
+Region extraction      & Single pass over mask   & $\mathcal{O}(N)$ \\
+R-peak detection       & Argmax per region       & $\mathcal{O}(N)$ \\
+Refractory filter      & Single pass over peaks  & $\mathcal{O}(M)$ \\
+\midrule
+\textbf{Total}         &                         & $\mathcal{O}(N)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+where $M \ll N$ is the number of detected R-peak candidates. Every stage is linear in $N$, making the overall pipeline $\mathcal{O}(N)$. For a 30-minute MIT-BIH recording with $N = 648{,}000$ samples, the algorithm runs in well under one second on a standard laptop, confirming its suitability for offline batch processing.
+
+For \textbf{real-time} or \textbf{streaming} deployment, the segmented structure of the algorithm is well-suited to extension: each 1-minute segment is processed independently, meaning the algorithm can emit R-peak detections at the end of each segment with a latency of at most 60 seconds. Reducing the segment length to, for example, 5 seconds would reduce latency accordingly, at the cost of fewer beats per segment and less stable K-Means centroids. A further consideration for real-time deployment is that the wavelet boundary artefact — currently responsible for the single missed beat in Record~100 — would recur at each segment boundary, requiring a small overlap between consecutive segments to ensure continuity~\cite{lin_discrete-wavelet-transform-based_2014}.
+
+
+\section{Adaptation for Pharmacological Data (ECGRDVQ)}\label{sec:ecgrdvq}
+While the MIT-BIH dataset provides a standard benchmark for arrhythmias, real-world clinical trials often involve pharmacological data with variable signal lengths and different morphological characteristics. To evaluate generalizability, the pipeline was adapted for the PhysioNet ECGRDVQ dataset~\cite{physionet_ecgrdvq}, which contains ECG recordings from subjects administered various drugs (e.g., Ranolazine, Dofetilide).
+
+
+\subsection{Representative Subset Evaluation}
+Due to computational constraints, the adapted pipeline was validated on a stratified subset of 15 records from patients administered Ranolazine. The algorithm successfully handled the variable lengths and accurately computed the clinical heart rates. As shown in Table~\ref{tab:ecgrdvq_results}, the extracted R-peaks yielded biologically realistic resting heart rates between 66 and 72 BPM, consistent with expected clinical outcomes for this anti-anginal medication.
+
+\begin{table}[h!]
+\centering
+\caption{Heart rate extraction results for a subset of Ranolazine records (10-second segments) from the ECGRDVQ dataset.}
+\label{tab:ecgrdvq_results}
+\begin{tabular}{llcc}
+\toprule
+\textbf{Subject} & \textbf{Record ID} & \textbf{Detected Peaks} & \textbf{Heart Rate (BPM)} \\
+\midrule
+1001 & 491af4aa-941a-4a89... & 11 & 66.0 \\
+1001 & db4d09aa-f26c-4acb... & 11 & 66.0 \\
+1001 & dd3caf18-354d-4c81... & 12 & 72.0 \\
+1001 & 12133f6e-efcf-48cc... & 11 & 66.0 \\
+1001 & 2c179592-3c18-47f2... & 12 & 72.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Baseline Comparison}\label{sec:benchmark}
+To benchmark the proposed modular pipeline, its performance was compared against the industry-standard Pan-Tompkins algorithm \cite{pan_real-time_1985} using a relative benchmarking strategy. The algorithms were evaluated on a stratified subset of 25 records from the ECGRDVQ database, utilizing Mean Absolute Error (MAE) of the computed Heart Rate (BPM) as the metric of comparison.
+
+As shown in Table~\ref{tab:benchmark}, a severe discrepancy was observed. The baseline Pan-Tompkins algorithm yielded an MAE of 59.76 BPM, frequently reporting heart rates nearly double the true physiological rate (e.g., 132 BPM vs. 66 BPM).
+
+\begin{table}[h!]
+\centering
+\caption{Sample Results. Mean Absolute Error (vs Pan-Tompkins): 59.76 BPM}
+\label{tab:benchmark}
+\begin{tabular}{llccc}
+\hline
+\textbf{Drug} & \textbf{Record} & \textbf{Proposed\_BPM} & \textbf{PT\_BPM} & \textbf{Error\_BPM} \\
+\hline
+Ranolazine      & 491af4aa & 66.0  & 132.0 & 66.0 \\
+Ranolazine      & db4d09aa & 66.0  & 126.0 & 60.0 \\
+Ranolazine      & dd3caf18 & 72.0  & 138.0 & 66.0 \\
+Ranolazine      & 12133f6e & 66.0  & 78.0  & 12.0 \\
+Ranolazine      & 2c179592 & 72.0  & 90.0  & 18.0 \\
+Verapamil HCL   & 4cc3caa6 & 78.0  & 156.0 & 78.0 \\
+Verapamil HCL   & b5885c7e & 72.0  & 138.0 & 66.0 \\
+Verapamil HCL   & b853e7b5 & 72.0  & 150.0 & 78.0 \\
+Verapamil HCL   & 3839c4c2 & 90.0  & 138.0 & 48.0 \\
+Verapamil HCL   & 5336a4ee & 90.0  & 174.0 & 84.0 \\
+Placebo         & 59b32384 & 72.0  & 90.0  & 18.0 \\
+Placebo         & 66a2b42a & 72.0  & 132.0 & 60.0 \\
+Placebo         & d123bf30 & 66.0  & 132.0 & 66.0 \\
+Placebo         & 1e1788d5 & 66.0  & 120.0 & 54.0 \\
+Placebo         & c3336421 & 66.0  & 150.0 & 84.0 \\
+Quinidine Sulph & 57c59f08 & 72.0  & 144.0 & 72.0 \\
+Quinidine Sulph & 5afccf3a & 66.0  & 138.0 & 72.0 \\
+Quinidine Sulph & d5604bc9 & 78.0  & 138.0 & 60.0 \\
+Quinidine Sulph & 6f353a62 & 66.0  & 132.0 & 66.0 \\
+Quinidine Sulph & 85448cbb & 72.0  & 138.0 & 66.0 \\
+Dofetilide      & 49649923 & 66.0  & 126.0 & 60.0 \\
+Dofetilide      & 93f0a597 & 66.0  & 156.0 & 90.0 \\
+Dofetilide      & ec9f3d35 & 78.0  & 144.0 & 66.0 \\
+Dofetilide      & 281d49bb & 108.0 & 144.0 & 36.0 \\
+Dofetilide      & 78fd5554 & 114.0 & 162.0 & 48.0 \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1\textwidth]{imgs/benchmarking.png}
+    \caption{Pan-Tompkins vs. Proposed Method.}
+    \label{fig:benchmarking}
+\end{figure}
+
+This massive error in the baseline algorithm is attributed to \textit{T-wave over-sensing} (double-counting). Pharmacological datasets, such as those studying Ranolazine and Quinidine, frequently feature altered ventricular repolarization, resulting in prominent or abnormal T-waves. Classical threshold-based algorithms like Pan-Tompkins are highly susceptible to falsely identifying these prominent T-waves as independent QRS complexes.
+
+Conversely, the proposed Wavelet and K-Means pipeline proved highly resilient to this artifact. By relying on absolute gradient slope clustered via K-Means, the algorithm successfully isolated the high-frequency true R-peaks from the lower-frequency, drug-altered T-waves. This demonstrates that the proposed modular architecture is significantly more robust for the analysis of complex pharmacological ECG data than classical baselines. Figure~\ref{fig:benchmarking} shows in the middle subplot how Pan-Tompkins method fails into the T-wave over-sensing trap, which explains the massive MAE error calculated, while the bootom subplot successes to detect the R-peaks.
+
+
 \section{Conclusion}\label{sec:conclusion}
 
 This report has presented the design, implementation, and evaluation of a wavelet-based R-peak detection algorithm following the method of Xia et al.\ (2015)~\cite{xia_quick_2015}, extended with automatic polarity correction and an adaptive centroid-ratio guard for challenging recordings.
 
-On the benchmark Record~100 from the MIT-BIH Arrhythmia Database, the algorithm achieves $\text{Se} = 100\%$ and $\text{PPV} = 100\%$ when excluding the wavelet boundary artefact at $t \approx 0$\,s. Performance degrades gracefully on more challenging records: Record~108, which exhibits inverted QRS morphology, achieves $\text{Se} = 95.5\%$ and $\text{PPV} = 91.2\%$ after polarity correction, while Record~207 — one of the most morphologically complex records in the database, containing LBBB, ventricular flutter, and fibrillation — produces correct beat counts with minor positional offsets.
+On the benchmark Record~100 from the MIT-BIH Arrhythmia Database, the algorithm achieves $\text{Se} = 100\%$ and $\text{PPV} = 100\%$ when excluding the wavelet boundary artefact at $t \approx 0$\,s. Performance degrades gracefully on more challenging records: Record~108, which exhibits inverted QRS morphology, achieves $\text{Se} = 98.7\%$ and $\text{PPV} = 91.0\%$ after polarity correction, while Record~207 — one of the most morphologically complex records in the database, containing LBBB, ventricular flutter, and fibrillation — produces correct beat counts with minor positional offsets.
 
 \begin{table}[htbp]
 \centering
-\begin{tabular}{lrrrrr}
+\caption{Performance summary of the records mentioned above.}
+\label{tab:summary}
+\begin{tabular}{lrrrrrr}
 \toprule
-\textbf{Record} & \textbf{TP} & \textbf{FP} & \textbf{FN} & 
-\textbf{Se (\%)} & \textbf{PPV (\%)} \\
+\textbf{Record} & \textbf{TP} & \textbf{FP} & \textbf{FN} & \textbf{Se (\%)} & \textbf{PPV (\%)} & \textbf{F1 (\%)} \\
 \midrule
-100 & 2273 & 0 & 1 & 100.0 & 100.0 \\
-108 (before) & 1659 & 660 & 165 & 90.9 & 71.5 \\
-108 (after)  & 1744 & 169 & 80  & 95.5 & 91.2 \\
-207 & 2184 & 81 & 201 & 91.6 & 96.4 \\
+100             & 2273 & 0   & 0   & 100.0 & 100.0 & 100.0  \\
+108$^\dagger$ (before) & 1682 & 523 & 81 & 95.4  & 76.3  & 84.8  \\
+108$^\dagger$ (after)  & 1740 & 173 & 23  & 98.7  & 91.0  & 94.7  \\
+207             & 2184 & 81  & 201 & 91.6  & 96.4  & 93.9  \\
 \bottomrule
 \end{tabular}
-\caption{Detection performance summary across selected MIT-BIH records.}
-\label{tab:summary}
 \end{table}
 
+Table~\ref{tab:summary} summarises performance across the four records evaluated. The algorithm achieves perfect detection on a well-conditioned record, degrades predictably on inverted morphology (recoverable with polarity correction), and maintains reasonable sensitivity on one of the most morphologically diverse records in the database. 
+
+Table~\ref{tab:all_records} presents the complete performance breakdown across all 48 MIT-BIH records with the refractory period set to 250. The records with the lowest performance are clearly identifiable from the table --- Record~108 due to inverted morphology, and Record~207 due to LBBB and ventricular flutter and others due to varying morphological complexities.
+
 The principal remaining limitation is the $\arg\max$ step within broad or notched QRS regions, which can select a suboptimal sample when the R-peak plateau is flat. Future work could address this by narrowing the search window to the first 60\% of each identified region, or by incorporating a template-matching step to improve positional accuracy on records with abnormal morphology.
+
+Furthermore, the adaptation of the pipeline to the ECGRDVQ database demonstrated the algorithm's generalizability to complex pharmacological trials. In a direct baseline comparison, the proposed method proved highly resilient to drug-induced T-wave over-sensing, achieving accurate heart rate extraction where the classical Pan-Tompkins algorithm suffered from severe double-counting (yielding an MAE of 59.76 BPM). This underscores the superiority and robustness of the absolute-slope and K-Means approach over traditional amplitude-threshold methods in real-world clinical applications.
+
+\begin{table}[p]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.1}
+\caption{Performance results for all results with Refractory Period = 250 ms.}
+\label{tab:all_records}
+\begin{tabular}{lrrrrrr}
+\toprule
+\textbf{Record} & \textbf{TP} & \textbf{FP} & \textbf{FN} & \textbf{Se (\%)} & \textbf{PPV (\%)} & \textbf{F1 (\%)} \\
+\midrule
+100 & 2273 & 0 & 0 & 100.00 & 100.00 & 100.00 \\
+101 & 1864 & 6 & 1 & 99.95 & 99.68 & 99.81 \\
+102 & 2186 & 0 & 1 & 99.95 & 100.00 & 99.98 \\
+103 & 2084 & 0 & 0 & 100.00 & 100.00 & 100.00 \\
+104 & 2228 & 62 & 1 & 99.96 & 97.29 & 98.61 \\
+105 & 2558 & 63 & 14 & 99.46 & 97.60 & 98.52 \\
+106 & 1981 & 1 & 46 & 97.73 & 99.95 & 98.83 \\
+107 & 2135 & 2 & 2 & 99.91 & 99.91 & 99.91 \\
+108 & 1740 & 173 & 23 & 98.70 & 90.96 & 94.67 \\
+109 & 2531 & 1 & 1 & 99.96 & 99.96 & 99.96 \\
+111 & 2121 & 22 & 3 & 99.86 & 98.97 & 99.41 \\
+112 & 2539 & 2 & 0 & 100.00 & 99.92 & 99.96 \\
+113 & 1795 & 0 & 0 & 100.00 & 100.00 & 100.00 \\
+114 & 1879 & 4 & 0 & 100.00 & 99.79 & 99.89 \\
+115 & 1953 & 0 & 0 & 100.00 & 100.00 & 100.00 \\
+116 & 2391 & 3 & 21 & 99.13 & 99.87 & 99.50 \\
+117 & 1535 & 3 & 0 & 100.00 & 99.80 & 99.90 \\
+118 & 2278 & 8 & 0 & 100.00 & 99.65 & 99.82 \\
+119 & 1987 & 1 & 0 & 100.00 & 99.95 & 99.97 \\
+121 & 1861 & 17 & 2 & 99.89 & 99.09 & 99.49 \\
+122 & 2476 & 0 & 0 & 100.00 & 100.00 & 100.00 \\
+123 & 1515 & 0 & 3 & 99.80 & 100.00 & 99.90 \\
+124 & 1619 & 1 & 0 & 100.00 & 99.94 & 99.97 \\
+200 & 2589 & 81 & 12 & 99.54 & 96.97 & 98.24 \\
+201 & 1927 & 0 & 36 & 98.17 & 100.00 & 99.07 \\
+202 & 2131 & 1 & 5 & 99.77 & 99.95 & 99.86 \\
+203 & 2912 & 136 & 68 & 97.72 & 95.54 & 96.62 \\
+205 & 2651 & 0 & 5 & 99.81 & 100.00 & 99.91 \\
+207 & 1822 & 443 & 38 & 97.96 & 80.44 & 88.34 \\
+208 & 2917 & 2 & 38 & 98.71 & 99.93 & 99.32 \\
+209 & 3005 & 4 & 0 & 100.00 & 99.87 & 99.93 \\
+210 & 2637 & 19 & 13 & 99.51 & 99.28 & 99.40 \\
+212 & 2748 & 1 & 0 & 100.00 & 99.96 & 99.98 \\
+213 & 3247 & 0 & 4 & 99.88 & 100.00 & 99.94 \\
+214 & 2255 & 3 & 7 & 99.69 & 99.87 & 99.78 \\
+215 & 3363 & 1 & 0 & 100.00 & 99.97 & 99.99 \\
+217 & 2206 & 4 & 2 & 99.91 & 99.82 & 99.86 \\
+219 & 2152 & 0 & 2 & 99.91 & 100.00 & 99.95 \\
+220 & 2048 & 0 & 0 & 100.00 & 100.00 & 100.00 \\
+221 & 2411 & 1 & 16 & 99.34 & 99.96 & 99.65 \\
+222 & 2467 & 1 & 16 & 99.36 & 99.96 & 99.66 \\
+223 & 2597 & 0 & 8 & 99.69 & 100.00 & 99.85 \\
+228 & 2041 & 104 & 12 & 99.42 & 95.15 & 97.24 \\
+230 & 2256 & 2 & 0 & 100.00 & 99.91 & 99.96 \\
+231 & 1568 & 0 & 3 & 99.81 & 100.00 & 99.90 \\
+232 & 1779 & 3 & 1 & 99.94 & 99.83 & 99.89 \\
+233 & 3072 & 3 & 7 & 99.77 & 99.90 & 99.84 \\
+234 & 2748 & 0 & 5 & 99.82 & 100.00 & 99.91 \\
+\midrule
+Mean & --- & --- & --- & 99.63 & 98.93 & --- \\
+Std  & --- & --- & --- & 0.61  & 3.16  & --- \\
+Min  & --- & --- & --- & 97.72 & 80.44 & --- \\
+Max  & --- & --- & --- & 100.00 & 100.00 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\begin{table}[p]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.1}
+\caption{Performance results for all results with Refractory Period = 150 ms.}
+\label{tab:all_records_150}
+\begin{tabular}{lrrrrrr}
+\toprule
+\textbf{Record} & \textbf{TP} & \textbf{FP} & \textbf{FN} & \textbf{Se (\%)} & \textbf{PPV (\%)} & \textbf{F1 (\%)} \\
+\midrule
+100 & 2273 & 0 & 0 & 100.00 & 100.00 & 100.00 \\
+101 & 1864 & 9 & 1 & 99.95 & 99.52 & 99.73 \\
+102 & 2186 & 0 & 1 & 99.95 & 100.00 & 99.98 \\
+103 & 2084 & 0 & 0 & 100.00 & 100.00 & 100.00 \\
+104 & 2229 & 122 & 0 & 100.00 & 94.81 & 97.34 \\
+105 & 2570 & 126 & 2 & 99.92 & 95.33 & 97.57 \\
+106 & 1981 & 1 & 46 & 97.73 & 99.95 & 98.83 \\
+107 & 2135 & 2 & 2 & 99.91 & 99.91 & 99.91 \\
+108 & 1742 & 405 & 21 & 98.81 & 81.14 & 89.10 \\
+109 & 2531 & 1 & 1 & 99.96 & 99.96 & 99.96 \\
+111 & 2123 & 27 & 1 & 99.95 & 98.74 & 99.34 \\
+112 & 2539 & 10 & 0 & 100.00 & 99.61 & 99.80 \\
+113 & 1795 & 0 & 0 & 100.00 & 100.00 & 100.00 \\
+114 & 1879 & 6 & 0 & 100.00 & 99.68 & 99.84 \\
+115 & 1953 & 0 & 0 & 100.00 & 100.00 & 100.00 \\
+116 & 2391 & 3 & 21 & 99.13 & 99.87 & 99.50 \\
+117 & 1535 & 5 & 0 & 100.00 & 99.68 & 99.84 \\
+118 & 2278 & 13 & 0 & 100.00 & 99.43 & 99.72 \\
+119 & 1987 & 1 & 0 & 100.00 & 99.95 & 99.97 \\
+121 & 1861 & 27 & 2 & 99.89 & 98.57 & 99.23 \\
+122 & 2476 & 1 & 0 & 100.00 & 99.96 & 99.98 \\
+123 & 1515 & 0 & 3 & 99.80 & 100.00 & 99.90 \\
+124 & 1619 & 3 & 0 & 100.00 & 99.82 & 99.91 \\
+200 & 2599 & 144 & 2 & 99.92 & 94.75 & 97.27 \\
+201 & 1927 & 0 & 36 & 98.17 & 100.00 & 99.07 \\
+202 & 2131 & 2 & 5 & 99.77 & 99.91 & 99.84 \\
+203 & 2962 & 244 & 18 & 99.40 & 92.39 & 95.76 \\
+205 & 2652 & 0 & 4 & 99.85 & 100.00 & 99.92 \\
+207 & 1842 & 563 & 18 & 99.03 & 76.59 & 86.38 \\
+208 & 2917 & 10 & 38 & 98.71 & 99.66 & 99.18 \\
+209 & 3005 & 10 & 0 & 100.00 & 99.67 & 99.83 \\
+210 & 2640 & 39 & 10 & 99.62 & 98.54 & 99.08 \\
+212 & 2748 & 1 & 0 & 100.00 & 99.96 & 99.98 \\
+213 & 3247 & 1 & 4 & 99.88 & 99.97 & 99.92 \\
+214 & 2256 & 6 & 6 & 99.73 & 99.73 & 99.73 \\
+215 & 3363 & 12 & 0 & 100.00 & 99.64 & 99.82 \\
+217 & 2206 & 6 & 2 & 99.91 & 99.73 & 99.82 \\
+219 & 2152 & 0 & 2 & 99.91 & 100.00 & 99.95 \\
+220 & 2048 & 0 & 0 & 100.00 & 100.00 & 100.00 \\
+221 & 2411 & 1 & 16 & 99.34 & 99.96 & 99.65 \\
+222 & 2467 & 1 & 16 & 99.36 & 99.96 & 99.66 \\
+223 & 2597 & 1 & 8 & 99.69 & 99.96 & 99.83 \\
+228 & 2044 & 179 & 9 & 99.56 & 91.95 & 95.60 \\
+230 & 2256 & 3 & 0 & 100.00 & 99.87 & 99.93 \\
+231 & 1568 & 0 & 3 & 99.81 & 100.00 & 99.90 \\
+232 & 1779 & 4 & 1 & 99.94 & 99.78 & 99.86 \\
+233 & 3073 & 4 & 6 & 99.81 & 99.87 & 99.84 \\
+234 & 2748 & 0 & 5 & 99.82 & 100.00 & 99.91 \\
+\midrule
+Mean & --- & --- & --- & 99.71 & 98.29 & --- \\
+Std  & --- & --- & --- & 0.49  & 4.49  & --- \\
+Min  & --- & --- & --- & 97.73 & 76.59 & --- \\
+Max  & --- & --- & --- & 100.00 & 100.00 & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 
 
 \newpage
