@@ -1,3 +1,4 @@
+
 \documentclass[11pt]{article}
 \usepackage[top=0.7in, left=1in, right=1in, bottom=1in]{geometry}
 \usepackage{amsmath}
@@ -543,7 +544,9 @@ For \textbf{real-time} or \textbf{streaming} deployment, the segmented structure
 
 
 \section{Adaptation for Pharmacological Data (ECGRDVQ)}\label{sec:ecgrdvq}
-While the MIT-BIH dataset provides a standard benchmark for arrhythmias, real-world clinical trials often involve pharmacological data with variable signal lengths and different morphological characteristics. To evaluate generalizability, the pipeline was adapted for the PhysioNet ECGRDVQ dataset~\cite{physionet_ecgrdvq}, which contains ECG recordings from subjects administered various drugs (e.g., Ranolazine, Dofetilide).
+While the MIT-BIH dataset provides a standard benchmark for arrhythmias, real-world clinical trials often involve pharmacological data with variable signal lengths and different morphological characteristics. To evaluate generalizability, the pipeline was adapted for the PhysioNet ECGRDVQ dataset~\cite{physionet_ecgrdvq}, which contains ECG recordings from subjects administered various drugs (e.g., Ranolazine, Dofetilide). 
+
+Notably, the proposed algorithm required minimal modification to handle this new dataset. To accommodate the specific signal characteristics, only two empirical adjustments were made: the wavelet decomposition depth was increased from 8 to 9 levels, and the physiological refractory period was standardized to \SI{200}{ms}.
 
 
 \subsection{Representative Subset Evaluation}
