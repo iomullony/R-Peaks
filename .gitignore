@@ -12,3 +12,5 @@ report/*.synctex.gz
 report/*.toc
 report/*.log
 extra/
+
+databases/
