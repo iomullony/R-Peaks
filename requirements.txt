@@ -1,0 +1,9 @@
+pandas 
+wfdb 
+numpy 
+pywt 
+scikit-learn 
+matplotlib 
+requests 
+tqdm 
+neurokit2
