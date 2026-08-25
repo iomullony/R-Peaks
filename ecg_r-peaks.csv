@@ -1,0 +1,76 @@
+Record,Drug,Proposed_BPM,PT_BPM,Diff_BPM
+491af4aa-941a-4a89-b74c-b38d91cfc5e9,Ranolazine,66.0,132.0,66.0
+db4d09aa-f26c-4acb-92fd-6ac316918bc8,Ranolazine,66.0,126.0,60.0
+dd3caf18-354d-4c81-9ff5-6aed843cd84b,Ranolazine,72.0,138.0,66.0
+12133f6e-efcf-48cc-a184-2e4d7cc05a89,Ranolazine,66.0,78.0,12.0
+2c179592-3c18-47f2-930a-7f17ae4bc596,Ranolazine,72.0,90.0,18.0
+43457f03-eb84-49ef-a00a-8cbad7d5108d,Ranolazine,84.0,168.0,84.0
+00ed2097-cd14-4f03-ab33-853da5be5550,Ranolazine,78.0,90.0,12.0
+9d7c5729-9458-4f8f-bf32-532d6b5ee5a4,Ranolazine,72.0,132.0,60.0
+cd50da94-9c66-4b62-88a2-5879fbc17999,Ranolazine,72.0,84.0,12.0
+3289874c-4da9-4a88-b68f-517ebacf0862,Ranolazine,72.0,138.0,66.0
+95dc1b28-c44a-40b1-87f2-47a00f2f99d4,Ranolazine,66.0,84.0,18.0
+a8979e69-69d8-406d-b21b-ed30c31c84c4,Ranolazine,72.0,144.0,72.0
+97d1bf94-e30e-45c2-8939-1c06ee5541af,Ranolazine,78.0,90.0,12.0
+a23a2e10-d660-40de-bd4a-f2920121ebf4,Ranolazine,78.0,150.0,72.0
+f893287e-1120-4d77-b309-176c37f9b3d6,Ranolazine,66.0,96.0,30.0
+4cc3caa6-80ff-42de-a342-43fd3d4c80de,Verapamil HCL,78.0,156.0,78.0
+b5885c7e-6ded-4858-94ca-8eced2659605,Verapamil HCL,72.0,138.0,66.0
+b853e7b5-b0aa-4b9b-a985-08af1899d524,Verapamil HCL,72.0,150.0,78.0
+3839c4c2-e725-442e-a7cb-a974772f171b,Verapamil HCL,90.0,138.0,48.0
+5336a4ee-abae-4d0f-b80b-66289e6ab2ae,Verapamil HCL,90.0,174.0,84.0
+a1ab42c8-6f3f-4578-96cb-d0ea60a09e3c,Verapamil HCL,90.0,156.0,66.0
+2ec6b27e-604c-4ddf-8446-8f1ffa6d161b,Verapamil HCL,84.0,96.0,12.0
+5cd5e370-85da-4d12-ac7b-b4f5872f833f,Verapamil HCL,84.0,162.0,78.0
+7e0806d4-aaef-4687-856b-41480d983924,Verapamil HCL,84.0,144.0,60.0
+52c29187-5a54-437a-aa3c-87f6688bee2f,Verapamil HCL,84.0,168.0,84.0
+94c0d012-4cbf-48f1-b3d2-1d5c53ff90b9,Verapamil HCL,84.0,144.0,60.0
+9ece0f4a-0b0c-4760-a871-82652f4075c5,Verapamil HCL,84.0,156.0,72.0
+71612803-f327-4950-93bb-01b9ba1c4814,Verapamil HCL,78.0,102.0,24.0
+9a731c83-a851-40b3-a6fb-68958f862281,Verapamil HCL,84.0,102.0,18.0
+d593581f-d105-4142-8d8d-0dbf131ddcb5,Verapamil HCL,78.0,156.0,78.0
+59b32384-c0f0-4595-92f7-b7f597a423b0,Placebo,72.0,90.0,18.0
+66a2b42a-ae22-4250-9512-33343768db54,Placebo,72.0,132.0,60.0
+d123bf30-f3bf-470e-8ae9-82f755112ecb,Placebo,66.0,132.0,66.0
+1e1788d5-e89d-48f9-afef-59411771248c,Placebo,66.0,120.0,54.0
+c3336421-828e-489c-b096-3758b3736e67,Placebo,66.0,150.0,84.0
+c7f0d491-dbb7-4feb-8bff-a72f9c31acea,Placebo,66.0,144.0,78.0
+59fd855d-8039-4bfa-96d0-5a838f40ba16,Placebo,72.0,150.0,78.0
+8d6c3e9d-e969-432c-8dec-b53b15950c84,Placebo,72.0,150.0,78.0
+eaf58732-2704-45a4-ae84-2ae5f04b1120,Placebo,72.0,138.0,66.0
+0b295042-f995-44b5-a602-95118be49045,Placebo,78.0,96.0,18.0
+2b69c78c-952d-434f-9c3b-e72387eb22db,Placebo,72.0,138.0,66.0
+32f72d8d-ccda-4bdf-aea0-fc40d22b82d0,Placebo,72.0,150.0,78.0
+306981ed-63f9-41b3-abef-63ba02075cc5,Placebo,66.0,126.0,60.0
+7f19211f-29ad-413a-b219-306875b00eaa,Placebo,72.0,132.0,60.0
+e7b03a3c-06a0-4c20-b82a-afc733e3f9ca,Placebo,72.0,132.0,60.0
+57c59f08-c58d-4a38-afa3-1a9233697446,Quinidine Sulph,72.0,144.0,72.0
+5afccf3a-9a05-41c4-9f36-3768f7007130,Quinidine Sulph,66.0,138.0,72.0
+d5604bc9-5c04-4811-9094-ae5203d1bb7f,Quinidine Sulph,78.0,138.0,60.0
+6f353a62-2cd7-41d3-93e7-04e4946c87c9,Quinidine Sulph,66.0,132.0,66.0
+85448cbb-2fcb-4a7f-9fd3-52d1c3dd4e04,Quinidine Sulph,72.0,138.0,66.0
+a3b7fb31-80b5-437d-bf7a-ec10f7a16ca8,Quinidine Sulph,66.0,138.0,72.0
+3a286725-5e94-48db-b9ae-bfb0fdd2d96e,Quinidine Sulph,84.0,84.0,0.0
+a6a17479-f471-4fa3-a923-273d59bc8ca5,Quinidine Sulph,84.0,150.0,66.0
+fe9af0e7-0077-49e5-8149-e4ca3b9566b9,Quinidine Sulph,84.0,150.0,66.0
+0314f793-0c07-4bd3-a53e-b0fce6c463ef,Quinidine Sulph,72.0,156.0,84.0
+155d22bd-b773-4bf7-a6bb-12f39b1161eb,Quinidine Sulph,78.0,156.0,78.0
+39e33ab8-147c-4589-b37f-7375ba9c8964,Quinidine Sulph,72.0,156.0,84.0
+3266972a-25fa-45fd-b2d1-831d50c52d29,Quinidine Sulph,84.0,168.0,84.0
+8ad48f71-ccfc-4299-9cb6-6a02b9c63225,Quinidine Sulph,84.0,84.0,0.0
+b729e308-2e8d-4c53-8592-e6cfbace82b6,Quinidine Sulph,84.0,156.0,72.0
+49649923-6d81-42a6-abcb-57c2a8095c6d,Dofetilide,66.0,126.0,60.0
+93f0a597-8412-4e5b-9e4a-54a9b995ec06,Dofetilide,66.0,156.0,90.0
+ec9f3d35-e71c-4690-9e6e-ed67ae908d5a,Dofetilide,72.0,144.0,72.0
+281d49bb-ec88-41fc-9e34-be79b9a6b865,Dofetilide,102.0,144.0,42.0
+78fd5554-e7f7-4c0b-ae60-33e0c7a10afe,Dofetilide,114.0,162.0,48.0
+abcc7aba-74e9-4142-af49-77a29cada3df,Dofetilide,120.0,168.0,48.0
+811ecf67-2c48-488c-b0a8-bd803a989a2c,Dofetilide,66.0,180.0,114.0
+b0c624b5-6815-4b06-9ced-d8ac58d1deb5,Dofetilide,66.0,132.0,66.0
+b976aaad-ccbd-4723-9f8a-d395d97c9502,Dofetilide,66.0,168.0,102.0
+8f690f8f-ea97-46c9-ac0c-d65256a6e1ee,Dofetilide,66.0,162.0,96.0
+95c3daed-f3a8-4280-afd6-8e1f4cc1d5eb,Dofetilide,66.0,168.0,102.0
+c7925cbd-aa4f-449d-afac-3edd9d958e67,Dofetilide,66.0,156.0,90.0
+2a91ebdb-e318-4a5c-9ce9-3d206f95239c,Dofetilide,60.0,138.0,78.0
+809892ba-73d6-4d61-a29a-e0ab9340b32a,Dofetilide,66.0,138.0,72.0
+c7de2c95-5ac0-4853-a279-17254ba423c8,Dofetilide,60.0,138.0,78.0
