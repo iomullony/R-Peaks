@@ -19,7 +19,7 @@ Detect R-peaks in ECG signals using wavelet denoising and K-Means clustering.
 - `report/` — LaTeX report sources and generated PDFs
 - `databases/` — Expected location for local MIT-BIH files (see below)
 
-## Quick Start (Python environment)
+## Quick Start
 
 1. Create and activate a virtual environment (recommended):
 
@@ -34,22 +34,20 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-3. Launch Jupyter and open the notebooks:
-
-```bash
-jupyter lab
-# or
-jupyter notebook
-```
-
 ## Datasets
 
 - MIT-BIH Arrhythmia Database:
-  - Download the dataset and place the files under `databases/mit-bih-arrhythmia-database-1.0.0/` (the repository expects the same folder layout currently in this workspace).
+  - Download the dataset from `https://physionet.org/content/mitdb/1.0.0/` and place the files under `databases/mitdb/` (the repository expects the same folder layout currently in this workspace).
+    ```bash
+    wget -r -N -c -np -nH --cut-dirs=3 -P mitdb https://physionet.org/files/mitdb/1.0.0/
+    ```
 - ECGRDVQ (PhysioNet):
   - Notebooks stream records from PhysioNet using `wfdb`. The clinical CSV used is:
     `https://physionet.org/files/ecgrdvq/1.0.0/SCR-002.Clinical.Data.csv`
-  - No manual download is required for ECGRDVQ when online access is available.
+  - No manual download is required for ECGRDVQ when online access is available (but a local version would make it faster).
+    ```bash
+    wget -r -N -c -np -nH --cut-dirs=3 -P ecgrdvq https://physionet.org/files/ecgrdvq/1.0.0/
+    ```
 
 ## Running the notebooks
 
@@ -60,23 +58,6 @@ jupyter notebook
 Notes:
 - After editing notebook code (e.g. changing how subsets are taken), restart the kernel and run cells from the top to ensure state consistency.
 
-## Building the LaTeX report
-
-From the `report/` directory you can build the PDF with `latexmk` (or `pdflatex` twice):
-
-```bash
-cd report
-latexmk -pdf main.tex
-```
-
-If the build fails with missing packages (e.g. `siunitx.sty`), install `texlive-latex-extra` or `texlive-full` on Ubuntu:
-
-```bash
-sudo apt update
-sudo apt install texlive-latex-extra
-# or for a full TeX Live:
-sudo apt install texlive-full
-```
 
 ## Common troubleshooting
 

@@ -1,9 +1,10 @@
 pandas 
 wfdb 
 numpy 
-pywt 
+PyWavelets 
 scikit-learn 
 matplotlib 
 requests 
 tqdm 
 neurokit2
+seaborn
